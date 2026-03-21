@@ -79,24 +79,18 @@ public class ItemService {
 	// GET ALL ITEMS
 	public List<Item> getAllItems() {
 
-	    var auth = SecurityContextHolder.getContext().getAuthentication();
+		String username = getLoggedInUsername();
 
-	    // 🔥 If no login → return all items
-	    if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
-	        return itemRepository.findAll();
-	    }
+		User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
 
-	    String username = auth.getName();
+		if ("USER".equals(user.getRole().getName())) {
+			return itemRepository.findByActiveTrue();
+		}
 
-	    User user = userRepository.findByUsername(username)
-	            .orElseThrow(() -> new RuntimeException("User not found"));
+		return itemRepository.findAll();
 
-	    if ("USER".equals(user.getRole().getName())) {
-	        return itemRepository.findByActiveTrue();
-	    }
-
-	    return itemRepository.findAll();
 	}
+
 	// GET ITEM BY ID
 	public Item getItem(Long id) {
 

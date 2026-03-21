@@ -2,7 +2,6 @@ package com.inventory.system.item.entity;
 
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.inventory.system.user.entity.User;
 
 import jakarta.persistence.Column;
@@ -37,7 +36,6 @@ public class Item {
 	private boolean active = true;
 
 	@ManyToOne
-	@JsonIgnore
 	@JoinColumn(name = "created_by")
 	private User createdBy;
 
@@ -45,7 +43,6 @@ public class Item {
 	private LocalDateTime createdAt;
 
 	@ManyToOne
-	@JsonIgnore
 	@JoinColumn(name = "updated_by")
 	private User updatedBy;
 

@@ -3,7 +3,6 @@ package com.inventory.system.item.controller;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,11 +34,8 @@ public class ItemController {
 
 	// GET ALL ITEMS
 	@GetMapping
-	public List<String> getItems() {
-	    return itemService.getAllItems()
-	            .stream()
-	            .map(item -> item.getName()) // 🔥 TEMP SAFE RETURN
-	            .toList();
+	public List<Item> getItems() {
+		return itemService.getAllItems();
 	}
 
 	// GET ITEM BY ID
@@ -59,8 +55,8 @@ public class ItemController {
 	@DeleteMapping("/{id}")
 	public Map<String, String> deleteItem(@PathVariable Long id) {
 
-		itemService.deleteItem(id);
+	    itemService.deleteItem(id);
 
-		return Map.of("message", "Item deleted successfully");
+	    return Map.of("message", "Item deleted successfully");
 	}
 }
