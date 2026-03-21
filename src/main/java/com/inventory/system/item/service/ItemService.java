@@ -79,16 +79,20 @@ public class ItemService {
 	// GET ALL ITEMS
 	public List<Item> getAllItems() {
 
-		String username = getLoggedInUsername();
+	    if (SecurityContextHolder.getContext().getAuthentication() == null) {
+	        return itemRepository.findAll();
+	    }
 
-		User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+	    String username = getLoggedInUsername();
 
-		if ("USER".equals(user.getRole().getName())) {
-			return itemRepository.findByActiveTrue();
-		}
+	    User user = userRepository.findByUsername(username)
+	            .orElseThrow(() -> new RuntimeException("User not found"));
 
-		return itemRepository.findAll();
+	    if ("USER".equals(user.getRole().getName())) {
+	        return itemRepository.findByActiveTrue();
+	    }
 
+	    return itemRepository.findAll();
 	}
 
 	// GET ITEM BY ID
