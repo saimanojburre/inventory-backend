@@ -36,7 +36,7 @@ public class SecurityConfig {
 						.requestMatchers("/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
 						.permitAll()
 
-						.requestMatchers("/api/items/**").permitAll()
+						.requestMatchers("/api/**").permitAll()
 
 						// allow create user
 						.requestMatchers(HttpMethod.POST, "/users").permitAll()
