@@ -35,17 +35,13 @@ public class ItemController {
 
 	// GET ALL ITEMS
 	@GetMapping
-	public List<Item> getItems() {
-		return itemService.getAllItems();
-	}
-	@GetMapping("/itemss")
-	public ResponseEntity<?> getAllItems() {
-	    try {
-	        return ResponseEntity.ok(itemService.getAllItems());
-	    } catch (Exception e) {
-	        e.printStackTrace(); // 🔥 THIS WILL PRINT IN LOGS
-	        return ResponseEntity.status(500).body(e.getMessage());
-	    }
+	public ResponseEntity<?> getItems() {
+		try {
+			return ResponseEntity.ok(itemService.getAllItems());
+		} catch (Exception e) {
+			e.printStackTrace(); // 🔥 NOW logs will show
+			return ResponseEntity.status(500).body(e.toString());
+		}
 	}
 
 	// GET ITEM BY ID
@@ -65,8 +61,8 @@ public class ItemController {
 	@DeleteMapping("/{id}")
 	public Map<String, String> deleteItem(@PathVariable Long id) {
 
-	    itemService.deleteItem(id);
+		itemService.deleteItem(id);
 
-	    return Map.of("message", "Item deleted successfully");
+		return Map.of("message", "Item deleted successfully");
 	}
 }
