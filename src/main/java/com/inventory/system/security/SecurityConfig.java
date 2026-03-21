@@ -27,31 +27,25 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-	    http
-	        .cors(cors -> {})
-	        .csrf(csrf -> csrf.disable())
-	        .sessionManagement(session ->
-	            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-	        )
-	        .authorizeHttpRequests(auth -> auth
+		http.cors(cors -> {
+		}).csrf(csrf -> csrf.disable())
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.authorizeHttpRequests(auth -> auth
 
-	            // public endpoints
-	            .requestMatchers(
-	                "/auth/**",
-	                "/swagger-ui/**",
-	                "/swagger-ui.html",
-	                "/v3/api-docs/**"
-	            ).permitAll()
+						// public endpoints
+						.requestMatchers("/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
+						.permitAll()
 
-	            // allow create user
-	            .requestMatchers(HttpMethod.POST, "/users").permitAll()
+						.requestMatchers("/api/items/**").permitAll()
 
-	            // everything else secured
-	            .anyRequest().authenticated()
-	        )
-	        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+						// allow create user
+						.requestMatchers(HttpMethod.POST, "/users").permitAll()
 
-	    return http.build();
+						// everything else secured
+						.anyRequest().authenticated())
+				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+		return http.build();
 	}
 
 	@Bean
