@@ -35,13 +35,11 @@ public class ItemController {
 
 	// GET ALL ITEMS
 	@GetMapping
-	public ResponseEntity<?> getItems() {
-		try {
-			return ResponseEntity.ok(itemService.getAllItems());
-		} catch (Exception e) {
-			e.printStackTrace(); // 🔥 NOW logs will show
-			return ResponseEntity.status(500).body(e.toString());
-		}
+	public List<String> getItems() {
+	    return itemService.getAllItems()
+	            .stream()
+	            .map(item -> item.getName()) // 🔥 TEMP SAFE RETURN
+	            .toList();
 	}
 
 	// GET ITEM BY ID
