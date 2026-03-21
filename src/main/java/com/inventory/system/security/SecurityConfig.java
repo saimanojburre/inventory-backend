@@ -27,31 +27,30 @@ public class SecurityConfig {
 	@Bean
 	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-	    http
-	        .cors(cors -> {})
-	        .csrf(csrf -> csrf.disable())
-	        .sessionManagement(session ->
-	            session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-	        )
-	        .authorizeHttpRequests(auth -> auth
+		http.cors(cors -> {
+		}).csrf(csrf -> csrf.disable())
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.authorizeHttpRequests(auth -> auth
 
-	            // public endpoints
-	            .requestMatchers(
-	                "/auth/**",
-	                "/swagger-ui/**",
-	                "/swagger-ui.html",
-	                "/v3/api-docs/**"
-	            ).permitAll()
+						// public endpoints
+						.requestMatchers("/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
+						.permitAll()
 
-	            // allow create user
-	            .requestMatchers(HttpMethod.POST, "/users").permitAll()
+						// allow create user
+						.requestMatchers(HttpMethod.POST, "/users").permitAll()
 
-	            // everything else secured
-	            .anyRequest().authenticated()
-	        )
-	        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+						// 🔥 TEMP: allow all APIs (VERY IMPORTANT)
+						.requestMatchers("/**").permitAll()
 
-	    return http.build();
+						// fallback (not really used now)
+						.anyRequest().authenticated())
+
+		// 🔥 TEMP: disable JWT filter for now
+		// .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+
+		;
+
+		return http.build();
 	}
 
 	@Bean
@@ -59,7 +58,8 @@ public class SecurityConfig {
 
 		CorsConfiguration configuration = new CorsConfiguration();
 
-		configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+		configuration.setAllowedOrigins(List.of("http://localhost:4200", "https://inventory.theairawatkitchen.in"));
+
 		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(List.of("*"));
 		configuration.setAllowCredentials(true);
