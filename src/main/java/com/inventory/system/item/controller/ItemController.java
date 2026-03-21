@@ -3,6 +3,7 @@ package com.inventory.system.item.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +37,15 @@ public class ItemController {
 	@GetMapping
 	public List<Item> getItems() {
 		return itemService.getAllItems();
+	}
+	@GetMapping("/itemss")
+	public ResponseEntity<?> getAllItems() {
+	    try {
+	        return ResponseEntity.ok(itemService.getAllItems());
+	    } catch (Exception e) {
+	        e.printStackTrace(); // 🔥 THIS WILL PRINT IN LOGS
+	        return ResponseEntity.status(500).body(e.getMessage());
+	    }
 	}
 
 	// GET ITEM BY ID
