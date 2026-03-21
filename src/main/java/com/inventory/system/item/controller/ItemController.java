@@ -20,7 +20,7 @@ public class ItemController {
 		this.itemService = itemService;
 	}
 
-	// CREATE ITEM
+	// CREATE NEW ITEM
 	@PostMapping
 	public Item createItem(@RequestBody Item item) {
 		return itemService.createItem(item);
