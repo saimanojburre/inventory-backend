@@ -3,14 +3,14 @@ package com.inventory.system.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
@@ -18,49 +18,73 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-	private final JwtAuthFilter jwtAuthFilter;
+    private final JwtAuthFilter jwtAuthFilter;
 
-	public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
-		this.jwtAuthFilter = jwtAuthFilter;
-	}
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
 
-	@Bean
-	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Bean
+    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-		http.cors(cors -> {
-		}).csrf(csrf -> csrf.disable())
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth
+        http.cors(cors -> {
+                }).csrf(csrf -> csrf.disable())
 
-						// public endpoints
-						.requestMatchers("/auth/**", "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**")
-						.permitAll()
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-						.requestMatchers("/api/**").permitAll()
+                .authorizeHttpRequests(auth -> auth
 
-						// allow create user
-						.requestMatchers(HttpMethod.POST, "/users").permitAll()
+                        // Swagger
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
 
-						// everything else secured
-						.anyRequest().authenticated())
-				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                        // Auth APIs
+                        .requestMatchers("/auth/**").permitAll()
 
-		return http.build();
-	}
+                        // Allow create user
+                        .requestMatchers(HttpMethod.POST, "/users").permitAll()
 
-	@Bean
-	CorsConfigurationSource corsConfigurationSource() {
+                        // Everything else secured
+                        .anyRequest().authenticated()
+                )
 
-		CorsConfiguration configuration = new CorsConfiguration();
+                .addFilterBefore(jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class);
 
-		configuration.setAllowedOrigins(List.of("http://localhost:4200", "https://inventory.theairawatkitchen.in"));
-		configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-		configuration.setAllowedHeaders(List.of("*"));
-		configuration.setAllowCredentials(true);
+        return http.build();
+    }
 
-		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-		source.registerCorsConfiguration("/**", configuration);
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
 
-		return source;
-	}
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        configuration.setAllowedOrigins(List.of(
+                "http://localhost:4200",
+                "https://inventory.theairawatkitchen.in"
+        ));
+
+        configuration.setAllowedMethods(List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
+        ));
+
+        configuration.setAllowedHeaders(List.of("*"));
+
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
 }
