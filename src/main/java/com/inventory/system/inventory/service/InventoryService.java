@@ -2,7 +2,11 @@ package com.inventory.system.inventory.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+import com.inventory.system.inventory.dto.PurchaseSummary;
+import com.inventory.system.inventory.dto.UsageSummary;
 import org.springframework.stereotype.Service;
 
 import com.inventory.system.inventory.dto.InventoryResponse;
@@ -26,45 +30,75 @@ public class InventoryService {
 		this.usageRepository = usageRepository;
 	}
 
-	public List<InventoryResponse> getInventory() {
+    public List<InventoryResponse> getInventory() {
 
-		List<Item> items = itemRepository.findByActiveTrue();
-		List<InventoryResponse> response = new ArrayList<>();
+        List<Item> items = itemRepository.findByActiveTrue();
 
-		for (Item item : items) {
+        List<PurchaseSummary> purchaseSummaries =
+                purchaseRepository.getPurchaseSummary();
 
-			Double purchased = purchaseRepository.getTotalPurchased(item.getId());
-			Double used = usageRepository.getTotalUsed(item.getId());
-			Double avgPrice = purchaseRepository.getAveragePrice(item.getId());
+        List<UsageSummary> usageSummaries =
+                usageRepository.getUsageSummary();
 
-			if (purchased == null)
-				purchased = 0.0;
+        Map<Long, PurchaseSummary> purchaseMap =
+                purchaseSummaries.stream()
+                        .collect(Collectors.toMap(
+                                PurchaseSummary::getItemId,
+                                p -> p
+                        ));
 
-			if (used == null)
-				used = 0.0;
+        Map<Long, UsageSummary> usageMap =
+                usageSummaries.stream()
+                        .collect(Collectors.toMap(
+                                UsageSummary::getItemId,
+                                u -> u
+                        ));
 
-			if (avgPrice == null)
-				avgPrice = 0.0;
+        List<InventoryResponse> response = new ArrayList<>();
 
-			Double quantity = purchased - used;
-			Double totalValue = quantity * avgPrice;
+        for (Item item : items) {
 
-			InventoryResponse inv = new InventoryResponse();
+            PurchaseSummary purchase =
+                    purchaseMap.get(item.getId());
 
-			inv.setItemId(item.getId());
-			inv.setCategory(item.getCategory());
-			inv.setItemName(item.getName());
-			inv.setMinStock(item.getMinStock());
-			inv.setUnits(item.getUnit());
-			inv.setQuantity(quantity);
-			inv.setCost(avgPrice);
-			inv.setTotal(totalValue);
+            UsageSummary usage =
+                    usageMap.get(item.getId());
 
-			response.add(inv);
-		}
+            double purchased =
+                    purchase != null
+                            ? purchase.getTotalPurchased()
+                            : 0.0;
 
-		return response;
-	}
+            double avgPrice =
+                    purchase != null
+                            ? purchase.getAvgPrice()
+                            : 0.0;
+
+            double used =
+                    usage != null
+                            ? usage.getTotalUsed()
+                            : 0.0;
+
+            double quantity = purchased - used;
+
+            double totalValue = quantity * avgPrice;
+
+            InventoryResponse inv = new InventoryResponse();
+
+            inv.setItemId(item.getId());
+            inv.setCategory(item.getCategory());
+            inv.setItemName(item.getName());
+            inv.setMinStock(item.getMinStock());
+            inv.setUnits(item.getUnit());
+            inv.setQuantity(quantity);
+            inv.setCost(avgPrice);
+            inv.setTotal(totalValue);
+
+            response.add(inv);
+        }
+
+        return response;
+    }
 
 	public Double getAverageCost(Long itemId) {
 
