@@ -82,7 +82,9 @@ public class UserService {
 
 			user.setRole(role);
 		}
-
+        if (request.getActive() != null) {
+            user.setActive(request.getActive());
+        }
 		return userRepository.save(user);
 	}
 

@@ -7,6 +7,7 @@ public class UpdateUserRequest {
 	private Long phone;
 	private String password;
 	private String role;
+    private boolean active;
 
 	public String getName() {
 		return name;
@@ -47,4 +48,8 @@ public class UpdateUserRequest {
 	public void setRole(String role) {
 		this.role = role;
 	}
+
+    public void setActive(Boolean active) {this.active = active;}
+
+    public Boolean getActive() {return active;}
 }

@@ -22,19 +22,39 @@ public class AuthService {
 		this.jwtService = jwtService;
 	}
 
-	public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) {
 
-		User user = userRepository.findByUsername(request.getUsername())
-				.orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByUsername(
+                request.getUsername()
+        ).orElseThrow(() ->
+                new RuntimeException("User not found"));
 
-		boolean passwordMatch = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        // ACTIVE CHECK
+        if (Boolean.FALSE.equals(user.getActive())) {
+            throw new RuntimeException(
+                    "User account is inactive"
+            );
+        }
 
-		if (!passwordMatch) {
-			throw new RuntimeException("Invalid password");
-		}
+        boolean passwordMatch =
+                passwordEncoder.matches(
+                        request.getPassword(),
+                        user.getPassword()
+                );
 
-		String token = jwtService.generateToken(user.getUsername());
+        if (!passwordMatch) {
+            throw new RuntimeException("Invalid password");
+        }
 
-		return new LoginResponse(token, user.getName(), user.getId(), user.getEmail(), user.getRole().getName());
-	}
+        String token =
+                jwtService.generateToken(user.getUsername());
+
+        return new LoginResponse(
+                token,
+                user.getName(),
+                user.getId(),
+                user.getEmail(),
+                user.getRole().getName()
+        );
+    }
 }
