@@ -21,6 +21,13 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     """)
     List<PurchaseSummary> getPurchaseSummary();
     @Query("""
+    SELECT SUM(p.quantity)
+    FROM Purchase p
+    WHERE p.item.id = :itemId
+""")
+    Double getTotalPurchased(Long itemId);
+
+    @Query("""
     SELECT AVG(p.price)
     FROM Purchase p
     WHERE p.item.id = :itemId

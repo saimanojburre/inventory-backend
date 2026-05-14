@@ -20,6 +20,12 @@ public interface UsageRepository extends JpaRepository<Usage, Long> {
         GROUP BY u.item.id
     """)
     List<UsageSummary> getUsageSummary();
+    @Query("""
+    SELECT SUM(u.quantity)
+    FROM Usage u
+    WHERE u.item.id = :itemId
+""")
+    Double getTotalUsed(Long itemId);
 
     List<Usage> findByUsedDateTimeBetween(
             LocalDateTime from,
