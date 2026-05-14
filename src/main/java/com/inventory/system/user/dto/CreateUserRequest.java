@@ -5,6 +5,11 @@ public class CreateUserRequest {
 	private String name;
 	private String username;
 	private Long phone;
+    private String email;
+    private String password;
+    private String role;
+    private Boolean active;
+
 	public String getUsername() {
 		return username;
 	}
@@ -20,10 +25,6 @@ public class CreateUserRequest {
 	public void setPhone(Long phone) {
 		this.phone = phone;
 	}
-
-	private String email;
-	private String password;
-	private String role;
 
 	public String getName() {
 		return name;
@@ -56,4 +57,8 @@ public class CreateUserRequest {
 	public void setRole(String role) {
 		this.role = role;
 	}
+
+    public void setActive(Boolean active) { this.active = active; }
+
+    public Boolean getActive() { return active; }
 }

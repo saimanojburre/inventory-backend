@@ -27,19 +27,38 @@ public class UserService {
 		this.passwordEncoder = passwordEncoder;
 	}
 
-	public User createUser(CreateUserRequest request) {
+    public User createUser(CreateUserRequest request) {
 
-		Role role = roleRepository.findByName(request.getRole())
-				.orElseThrow(() -> new RuntimeException("Role not found"));
+        User user = new User();
 
-		User user = new User();
-		user.setName(request.getName());
-		user.setUsername(request.getUsername());
-		user.setPhone(request.getPhone());
-		user.setEmail(request.getEmail());
-		user.setPassword(passwordEncoder.encode(request.getPassword()));
-		return userRepository.save(user);
-	}
+        user.setName(request.getName());
+        user.setUsername(request.getUsername());
+        user.setPhone(request.getPhone());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        // ADMIN FLOW
+        if (request.getRole() != null) {
+
+            Role role = roleRepository.findByName(request.getRole())
+                    .orElseThrow(() -> new RuntimeException("Role not found"));
+
+            user.setRole(role);
+
+            user.setActive(
+                    request.getActive() != null
+                            ? request.getActive()
+                            : true
+            );
+        }
+        // PUBLIC REGISTRATION FLOW
+        else {
+            Role defaultRole = roleRepository.findByName("USER")
+                    .orElseThrow(() -> new RuntimeException("Role not found"));
+            user.setRole(defaultRole);
+            user.setActive(false);
+        }
+        return userRepository.save(user);
+    }
 
 	public List<User> getAllUsers() {
 		return userRepository.findAll();
