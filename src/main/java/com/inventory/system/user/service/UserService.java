@@ -6,6 +6,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.inventory.system.exception.BadRequestException;
 import com.inventory.system.exception.ResourceNotFoundException;
 import com.inventory.system.role.entity.Role;
 import com.inventory.system.role.repository.RoleRepository;
@@ -36,12 +37,20 @@ public class UserService {
 
         // Email validation
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+
+            throw new BadRequestException(
+                    "Email already exists"
+            );
         }
 
         // Username validation
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+        if (userRepository.existsByUsername(
+                request.getUsername()
+        )) {
+
+            throw new BadRequestException(
+                    "Username already exists"
+            );
         }
 
         User user = new User();
@@ -53,15 +62,21 @@ public class UserService {
 
         // Encrypt password
         user.setPassword(
-                passwordEncoder.encode(request.getPassword())
+                passwordEncoder.encode(
+                        request.getPassword()
+                )
         );
 
         // ADMIN FLOW
         if (request.getRole() != null) {
 
-            Role role = roleRepository.findByName(request.getRole())
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException("Role not found"));
+            Role role = roleRepository.findByName(
+                    request.getRole()
+            ).orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "Role not found"
+                    )
+            );
 
             user.setRole(role);
 
@@ -75,9 +90,13 @@ public class UserService {
         // PUBLIC REGISTRATION FLOW
         else {
 
-            Role defaultRole = roleRepository.findByName("USER")
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException("Role not found"));
+            Role defaultRole = roleRepository.findByName(
+                    "USER"
+            ).orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "Role not found"
+                    )
+            );
 
             user.setRole(defaultRole);
 
@@ -98,14 +117,23 @@ public class UserService {
 
         return userRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+                        new ResourceNotFoundException(
+                                "User not found"
+                        )
+                );
     }
 
-    public User updateUser(Long id, UpdateUserRequest request) {
+    public User updateUser(
+            Long id,
+            UpdateUserRequest request
+    ) {
 
         User user = userRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+                        new ResourceNotFoundException(
+                                "User not found"
+                        )
+                );
 
         // Update name
         if (request.getName() != null) {
@@ -116,8 +144,13 @@ public class UserService {
         if (request.getEmail() != null &&
                 !request.getEmail().equals(user.getEmail())) {
 
-            if (userRepository.existsByEmail(request.getEmail())) {
-                throw new RuntimeException("Email already exists");
+            if (userRepository.existsByEmail(
+                    request.getEmail()
+            )) {
+
+                throw new BadRequestException(
+                        "Email already exists"
+                );
             }
 
             user.setEmail(request.getEmail());
@@ -133,16 +166,22 @@ public class UserService {
                 !request.getPassword().isBlank()) {
 
             user.setPassword(
-                    passwordEncoder.encode(request.getPassword())
+                    passwordEncoder.encode(
+                            request.getPassword()
+                    )
             );
         }
 
         // Update role
         if (request.getRole() != null) {
 
-            Role role = roleRepository.findByName(request.getRole())
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException("Role not found"));
+            Role role = roleRepository.findByName(
+                    request.getRole()
+            ).orElseThrow(() ->
+                    new ResourceNotFoundException(
+                            "Role not found"
+                    )
+            );
 
             user.setRole(role);
         }
@@ -158,7 +197,10 @@ public class UserService {
     public void deleteUser(Long id) {
 
         if (!userRepository.existsById(id)) {
-            throw new ResourceNotFoundException("User not found");
+
+            throw new ResourceNotFoundException(
+                    "User not found"
+            );
         }
 
         userRepository.deleteById(id);

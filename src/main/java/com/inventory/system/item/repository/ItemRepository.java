@@ -13,4 +13,6 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
 	List<Item> findByActiveTrue();
 
+    boolean existsByName(String name);
+
 }

@@ -1,13 +1,11 @@
 package com.inventory.system.item.service;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
 import org.springframework.security.core.context.SecurityContextHolder;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.inventory.system.exception.BadRequestException;
 import com.inventory.system.exception.ResourceNotFoundException;
@@ -18,110 +16,154 @@ import com.inventory.system.user.entity.User;
 import com.inventory.system.user.repository.UserRepository;
 
 @Service
+@Transactional
 public class ItemService {
 
-	private final ItemRepository itemRepository;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
 
-	private final UserRepository userRepository;
+    public ItemService(
+            ItemRepository itemRepository,
+            UserRepository userRepository
+    ) {
+        this.itemRepository = itemRepository;
+        this.userRepository = userRepository;
+    }
 
-	public ItemService(ItemRepository itemRepository, UserRepository userRepository) {
+    // CREATE ITEM
+    public Item createItem(Item item) {
 
-		this.itemRepository = itemRepository;
-		this.userRepository = userRepository;
+        if (itemRepository.existsByName(item.getName())) {
 
-	}
+            throw new BadRequestException(
+                    "Item already exists"
+            );
+        }
 
-	// CREATE ITEM
-	public Item createItem(Item item) {
+        return itemRepository.save(item);
+    }
 
-		if (itemRepository.findByName(item.getName()).isPresent()) {
-			throw new BadRequestException("Item already exists");
-		}
+    // BULK CREATE ITEMS
+    public BulkItemResponse createItems(List<Item> items) {
 
-		return itemRepository.save(item);
-	}
+        List<String> duplicates = new ArrayList<>();
+        List<Item> validItems = new ArrayList<>();
 
-	public BulkItemResponse createItems(List<Item> items) {
+        // Request names
+        Set<String> requestNames = new HashSet<>();
 
-		List<Item> validItems = new ArrayList<>();
-		List<String> duplicates = new ArrayList<>();
+        // Existing DB names
+        Set<String> existingNames = itemRepository.findAll()
+                .stream()
+                .map(item -> item.getName().toLowerCase())
+                .collect(Collectors.toSet());
 
-		Set<String> requestNames = new HashSet<>();
+        for (Item item : items) {
 
-		for (Item item : items) {
+            String normalizedName =
+                    item.getName().trim().toLowerCase();
 
-			String name = item.getName().toLowerCase();
+            // Duplicate inside request
+            if (!requestNames.add(normalizedName)) {
 
-			// duplicate in request
-			if (!requestNames.add(name)) {
-				duplicates.add(item.getName());
-				continue;
-			}
+                duplicates.add(item.getName());
 
-			// duplicate in DB
-			if (itemRepository.findByName(item.getName()).isPresent()) {
-				duplicates.add(item.getName());
-				continue;
-			}
+                continue;
+            }
 
-			validItems.add(item);
-		}
+            // Duplicate in DB
+            if (existingNames.contains(normalizedName)) {
 
-		itemRepository.saveAll(validItems);
+                duplicates.add(item.getName());
 
-		BulkItemResponse response = new BulkItemResponse();
-		response.setSaved(validItems.size());
-		response.setDuplicates(duplicates);
+                continue;
+            }
 
-		return response;
-	}
+            validItems.add(item);
+        }
 
-	// GET ALL ITEMS
-	public List<Item> getAllItems() {
+        itemRepository.saveAll(validItems);
 
-		String username = getLoggedInUsername();
+        BulkItemResponse response =
+                new BulkItemResponse();
 
-		User user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+        response.setSaved(validItems.size());
 
-		if ("USER".equals(user.getRole().getName())) {
-			return itemRepository.findByActiveTrue();
-		}
+        response.setDuplicates(duplicates);
 
-		return itemRepository.findAll();
+        return response;
+    }
 
-	}
+    // GET ALL ITEMS
+    @Transactional(readOnly = true)
+    public List<Item> getAllItems() {
 
-	// GET ITEM BY ID
-	public Item getItem(Long id) {
+        String username = getLoggedInUsername();
 
-		return itemRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Item not found"));
-	}
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found"
+                        )
+                );
 
-	// UPDATE ITEM
-	public Item updateItem(Long id, Item item) {
+        if ("USER".equals(user.getRole().getName())) {
 
-		Item existingItem = itemRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Item not found"));
+            return itemRepository.findByActiveTrue();
+        }
 
-		existingItem.setName(item.getName());
-		existingItem.setCategory(item.getCategory());
-		existingItem.setUnit(item.getUnit());
-		existingItem.setMinStock(item.getMinStock());
+        return itemRepository.findAll();
+    }
 
-		return itemRepository.save(existingItem);
-	}
+    // GET ITEM BY ID
+    @Transactional(readOnly = true)
+    public Item getItem(Long id) {
 
-	private String getLoggedInUsername() {
-		return SecurityContextHolder.getContext().getAuthentication().getName();
-	}
+        return itemRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Item not found"
+                        )
+                );
+    }
 
-	// DELETE ITEM (SOFT DELETE)
-	public void deleteItem(Long id) {
+    // UPDATE ITEM
+    public Item updateItem(Long id, Item item) {
 
-		Item item = itemRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Item not found"));
+        Item existingItem = itemRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Item not found"
+                        )
+                );
 
-		item.setActive(false);
+        existingItem.setName(item.getName());
+        existingItem.setCategory(item.getCategory());
+        existingItem.setUnit(item.getUnit());
+        existingItem.setMinStock(item.getMinStock());
 
-		itemRepository.save(item);
-	}
+        return itemRepository.save(existingItem);
+    }
+
+    // SOFT DELETE
+    public void deleteItem(Long id) {
+
+        Item item = itemRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Item not found"
+                        )
+                );
+
+        item.setActive(false);
+
+        itemRepository.save(item);
+    }
+
+    private String getLoggedInUsername() {
+
+        return SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+    }
 }

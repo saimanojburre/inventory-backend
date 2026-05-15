@@ -1,15 +1,13 @@
 package com.inventory.system.auth.controller;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.inventory.system.auth.dto.LoginRequest;
 import com.inventory.system.auth.dto.LoginResponse;
 import com.inventory.system.auth.service.AuthService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/auth")
@@ -22,27 +20,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(
-            @RequestBody LoginRequest request
+    public ResponseEntity<LoginResponse> login(
+            @Valid @RequestBody LoginRequest request
     ) {
 
-        try {
-
-            LoginResponse response =
-                    authService.login(request);
-
-            return ResponseEntity.ok(response);
-
-        } catch (RuntimeException e) {
-
-            Map<String, String> error =
-                    new HashMap<>();
-
-            error.put("message", e.getMessage());
-
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body(error);
-        }
+        return ResponseEntity.ok(
+                authService.login(request)
+        );
     }
 }
