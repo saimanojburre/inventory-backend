@@ -3,42 +3,55 @@ package com.inventory.system.role.service;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.inventory.system.exception.ResourceNotFoundException;
 import com.inventory.system.role.entity.Role;
 import com.inventory.system.role.repository.RoleRepository;
-import com.inventory.system.exception.ResourceNotFoundException;
 
 @Service
+@Transactional
 public class RoleService {
 
-	private final RoleRepository roleRepository;
+    private final RoleRepository roleRepository;
 
-	public RoleService(RoleRepository roleRepository) {
-		this.roleRepository = roleRepository;
-	}
+    public RoleService(RoleRepository roleRepository) {
+        this.roleRepository = roleRepository;
+    }
 
-	public List<Role> getAllRoles() {
-		return roleRepository.findAll();
-	}
+    @Transactional(readOnly = true)
+    public List<Role> getAllRoles() {
 
-	public Role createRole(Role role) {
-		return roleRepository.save(role);
-	}
+        return roleRepository.findAll();
+    }
 
-	public Role updateRole(Long id, Role role) {
+    public Role createRole(Role role) {
 
-		Role existingRole = roleRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Role not found"));
+        roleRepository.findByName(role.getName())
+                .ifPresent(existing -> {
+                    throw new IllegalArgumentException("Role already exists");
+                });
 
-		existingRole.setName(role.getName());
+        return roleRepository.save(role);
+    }
 
-		return roleRepository.save(existingRole);
-	}
+    public Role updateRole(Long id, Role role) {
 
-	public void deleteRole(Long id) {
+        Role existingRole = roleRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Role not found"));
 
-		Role role = roleRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Role not found"));
+        existingRole.setName(role.getName());
 
-		roleRepository.delete(role);
-	}
+        return roleRepository.save(existingRole);
+    }
+
+    public void deleteRole(Long id) {
+
+        if (!roleRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Role not found");
+        }
+
+        roleRepository.deleteById(id);
+    }
 }

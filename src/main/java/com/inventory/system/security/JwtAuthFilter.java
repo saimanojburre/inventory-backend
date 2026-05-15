@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -23,32 +24,42 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+
+        String path = request.getServletPath();
+
+        return path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-resources")
+                || path.startsWith("/auth");
+    }
+
+    @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain)
             throws ServletException, IOException {
 
-        String path = request.getServletPath();
+        String authHeader = request.getHeader("Authorization");
 
-        // Skip Swagger endpoints
-        if (path.startsWith("/swagger-ui")
-                || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-resources")) {
+        // No token present
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
 
             filterChain.doFilter(request, response);
             return;
         }
 
-        String header = request.getHeader("Authorization");
+        try {
 
-        if (header != null && header.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
 
-            String token = header.substring(7);
+            String email = jwtService.extractEmail(token);
 
-            try {
-
-                String email = jwtService.extractEmail(token);
+            // Avoid resetting authentication
+            if (email != null &&
+                    SecurityContextHolder.getContext()
+                            .getAuthentication() == null) {
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -64,12 +75,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext()
                         .setAuthentication(authentication);
-
-            } catch (Exception e) {
-
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
             }
+
+        } catch (Exception ex) {
+
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);

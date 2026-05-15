@@ -2,105 +2,127 @@ package com.inventory.system.user.entity;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.inventory.system.role.entity.Role;
 
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        indexes = {
+                @Index(name = "idx_user_email", columnList = "email"),
+                @Index(name = "idx_user_username", columnList = "username")
+        }
+)
 public class User {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	private String name;
+    @Column(nullable = false, length = 100)
+    private String name;
 
-	private String username;
-	private Long phone;
+    @Column(nullable = false, unique = true, length = 50)
+    private String username;
 
-	@Column(unique = true)
-	private String email;
+    @Column(length = 20)
+    private String phone;
 
-	private String password;
+    @Column(nullable = false, unique = true, length = 150)
+    private String email;
 
-	@ManyToOne
-	@JoinColumn(name = "role_id")
-	private Role role;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(nullable = false)
+    private String password;
 
-	private Boolean active = true;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", nullable = false)
+    private Role role;
 
-	private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false)
+    private Boolean active = true;
 
-	public Long getId() {
-		return id;
-	}
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    @PrePersist
+    public void prePersist() {
+        this.createdAt = LocalDateTime.now();
+    }
 
-	public String getName() {
-		return name;
-	}
+    // getters/setters
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public String getEmail() {
-		return email;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setEmail(String email) {
-		this.email = email;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getPassword() {
-		return password;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
+    public String getUsername() {
+        return username;
+    }
 
-	public Role getRole() {
-		return role;
-	}
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-	public void setRole(Role role) {
-		this.role = role;
-	}
+    public String getPhone() {
+        return phone;
+    }
 
-	public Boolean getActive() {
-		return active;
-	}
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
 
-	public void setActive(Boolean active) {
-		this.active = active;
-	}
+    public String getEmail() {
+        return email;
+    }
 
-	public LocalDateTime getCreatedAt() {
-		return createdAt;
-	}
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-	public void setCreatedAt(LocalDateTime createdAt) {
-		this.createdAt = createdAt;
-	}
+    public String getPassword() {
+        return password;
+    }
 
-	public String getUsername() {
-		return username;
-	}
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    public Role getRole() {
+        return role;
+    }
 
-	public Long getPhone() {
-		return phone;
-	}
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
-	public void setPhone(Long phone) {
-		this.phone = phone;
-	}
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

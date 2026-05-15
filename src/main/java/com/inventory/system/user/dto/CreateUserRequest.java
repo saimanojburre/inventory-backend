@@ -4,7 +4,7 @@ public class CreateUserRequest {
 
 	private String name;
 	private String username;
-	private Long phone;
+	private String phone;
     private String email;
     private String password;
     private String role;
@@ -18,11 +18,11 @@ public class CreateUserRequest {
 		this.username = username;
 	}
 
-	public Long getPhone() {
+	public String getPhone() {
 		return phone;
 	}
 
-	public void setPhone(Long phone) {
+	public void setPhone(String phone) {
 		this.phone = phone;
 	}
 

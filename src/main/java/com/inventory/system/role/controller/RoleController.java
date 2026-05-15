@@ -2,6 +2,8 @@ package com.inventory.system.role.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.inventory.system.role.entity.Role;
@@ -11,33 +13,42 @@ import com.inventory.system.role.service.RoleService;
 @RequestMapping("/roles")
 public class RoleController {
 
-	private final RoleService roleService;
+    private final RoleService roleService;
 
-	public RoleController(RoleService roleService) {
-		this.roleService = roleService;
-	}
+    public RoleController(RoleService roleService) {
+        this.roleService = roleService;
+    }
 
-	@GetMapping
-	public List<Role> getRoles() {
-		return roleService.getAllRoles();
-	}
+    @GetMapping
+    public ResponseEntity<List<Role>> getRoles() {
 
-	@PostMapping
-	public Role createRole(@RequestBody Role role) {
-		return roleService.createRole(role);
-	}
+        return ResponseEntity.ok(roleService.getAllRoles());
+    }
 
-	@PutMapping("/{id}")
-	public Role updateRole(@PathVariable Long id, @RequestBody Role role) {
+    @PostMapping
+    public ResponseEntity<Role> createRole(@RequestBody Role role) {
 
-		return roleService.updateRole(id, role);
-	}
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(roleService.createRole(role));
+    }
 
-	@DeleteMapping("/{id}")
-	public String deleteRole(@PathVariable Long id) {
+    @PutMapping("/{id}")
+    public ResponseEntity<Role> updateRole(
+            @PathVariable Long id,
+            @RequestBody Role role
+    ) {
 
-		roleService.deleteRole(id);
+        return ResponseEntity.ok(
+                roleService.updateRole(id, role)
+        );
+    }
 
-		return "Role deleted";
-	}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteRole(@PathVariable Long id) {
+
+        roleService.deleteRole(id);
+
+        return ResponseEntity.ok("Role deleted");
+    }
 }

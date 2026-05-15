@@ -2,6 +2,8 @@ package com.inventory.system.user.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.inventory.system.user.dto.CreateUserRequest;
@@ -13,38 +15,60 @@ import com.inventory.system.user.service.UserService;
 @RequestMapping("/users")
 public class UserController {
 
-	private final UserService userService;
+    private final UserService userService;
 
-	public UserController(UserService userService) {
-		this.userService = userService;
-	}
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
-	@PostMapping
-	public User createUser(@RequestBody CreateUserRequest request) {
-		return userService.createUser(request);
-	}
+    @PostMapping
+    public ResponseEntity<User> createUser(
+            @RequestBody CreateUserRequest request
+    ) {
 
-	@GetMapping
-	public List<User> getAllUsers() {
-		return userService.getAllUsers();
-	}
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(userService.createUser(request));
+    }
 
-	@GetMapping("/{id}")
-	public User getUser(@PathVariable Long id) {
-		return userService.getUserById(id);
-	}
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
 
-	@PutMapping("/{id}")
-	public User updateUser(@PathVariable Long id, @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(
+                userService.getAllUsers()
+        );
+    }
 
-		return userService.updateUser(id, request);
-	}
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUser(
+            @PathVariable Long id
+    ) {
 
-	@DeleteMapping("/{id}")
-	public String deleteUser(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                userService.getUserById(id)
+        );
+    }
 
-		userService.deleteUser(id);
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(
+            @PathVariable Long id,
+            @RequestBody UpdateUserRequest request
+    ) {
 
-		return "User deleted successfully";
-	}
+        return ResponseEntity.ok(
+                userService.updateUser(id, request)
+        );
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteUser(
+            @PathVariable Long id
+    ) {
+
+        userService.deleteUser(id);
+
+        return ResponseEntity.ok(
+                "User deleted successfully"
+        );
+    }
 }

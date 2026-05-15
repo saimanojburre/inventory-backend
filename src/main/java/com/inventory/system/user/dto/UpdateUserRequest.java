@@ -4,7 +4,7 @@ public class UpdateUserRequest {
 
 	private String name;
 	private String email;
-	private Long phone;
+	private String phone;
 	private String password;
 	private String role;
     private boolean active;
@@ -25,11 +25,11 @@ public class UpdateUserRequest {
 		this.email = email;
 	}
 
-	public Long getPhone() {
+	public String getPhone() {
 		return phone;
 	}
 
-	public void setPhone(Long phone) {
+	public void setPhone(String phone) {
 		this.phone = phone;
 	}
 

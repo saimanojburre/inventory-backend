@@ -14,9 +14,19 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-@EnableMethodSecurity
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfig {
+
+    private static final String[] SWAGGER_WHITELIST = {
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/v3/api-docs/**"
+    };
+
+    private static final String[] PUBLIC_ENDPOINTS = {
+            "/auth/**"
+    };
 
     private final JwtAuthFilter jwtAuthFilter;
 
@@ -25,41 +35,46 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        http.cors(cors -> {
-                }).csrf(csrf -> csrf.disable())
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
 
                 .authorizeHttpRequests(auth -> auth
 
                         // Swagger
-                        .requestMatchers(
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/v3/api-docs/**"
-                        ).permitAll()
+                        .requestMatchers(SWAGGER_WHITELIST).permitAll()
 
-                        // Auth APIs
-                        .requestMatchers("/auth/**").permitAll()
+                        // Public APIs
+                        .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
 
-                        // Allow create user
-                        .requestMatchers(HttpMethod.POST, "/users", "/roles").permitAll()
+                        // Allow preflight requests
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Everything else secured
+                        // Allow create user & roles
+                        .requestMatchers(HttpMethod.POST, "/users", "/roles")
+                        .permitAll()
+
+                        // Secure everything else
                         .anyRequest().authenticated()
                 )
 
-                .addFilterBefore(jwtAuthFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(
+                        jwtAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
         return http.build();
     }
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration = new CorsConfiguration();
 

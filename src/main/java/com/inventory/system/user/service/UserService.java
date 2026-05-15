@@ -1,6 +1,10 @@
 package com.inventory.system.user.service;
 
+import java.util.List;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.inventory.system.exception.ResourceNotFoundException;
 import com.inventory.system.role.entity.Role;
@@ -10,24 +14,35 @@ import com.inventory.system.user.dto.UpdateUserRequest;
 import com.inventory.system.user.entity.User;
 import com.inventory.system.user.repository.UserRepository;
 
-import java.util.List;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
-
 @Service
+@Transactional
 public class UserService {
 
-	private final UserRepository userRepository;
-	private final RoleRepository roleRepository;
-	private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
-	public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
-		this.userRepository = userRepository;
-		this.roleRepository = roleRepository;
-		this.passwordEncoder = passwordEncoder;
-	}
+    public UserService(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder
+    ) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public User createUser(CreateUserRequest request) {
+
+        // Email validation
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email already exists");
+        }
+
+        // Username validation
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Username already exists");
+        }
 
         User user = new User();
 
@@ -35,12 +50,18 @@ public class UserService {
         user.setUsername(request.getUsername());
         user.setPhone(request.getPhone());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        // Encrypt password
+        user.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
+
         // ADMIN FLOW
         if (request.getRole() != null) {
 
             Role role = roleRepository.findByName(request.getRole())
-                    .orElseThrow(() -> new RuntimeException("Role not found"));
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Role not found"));
 
             user.setRole(role);
 
@@ -50,65 +71,96 @@ public class UserService {
                             : true
             );
         }
+
         // PUBLIC REGISTRATION FLOW
         else {
+
             Role defaultRole = roleRepository.findByName("USER")
-                    .orElseThrow(() -> new RuntimeException("Role not found"));
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Role not found"));
+
             user.setRole(defaultRole);
+
             user.setActive(false);
         }
+
         return userRepository.save(user);
     }
 
-	public List<User> getAllUsers() {
-		return userRepository.findAll();
-	}
+    @Transactional(readOnly = true)
+    public List<User> getAllUsers() {
 
-	public User getUserById(Long id) {
+        return userRepository.findAll();
+    }
 
-		return userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-	}
+    @Transactional(readOnly = true)
+    public User getUserById(Long id) {
 
-	public User updateUser(Long id, UpdateUserRequest request) {
+        return userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+    }
 
-		User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    public User updateUser(Long id, UpdateUserRequest request) {
 
-		// Update basic fields
-		if (request.getName() != null) {
-			user.setName(request.getName());
-		}
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
 
-		if (request.getEmail() != null) {
-			user.setEmail(request.getEmail());
-		}
+        // Update name
+        if (request.getName() != null) {
+            user.setName(request.getName());
+        }
 
-		if (request.getPhone() != null) {
-			user.setPhone(request.getPhone());
-		}
+        // Update email
+        if (request.getEmail() != null &&
+                !request.getEmail().equals(user.getEmail())) {
 
-		// Update password only if provided
-		if (request.getPassword() != null && !request.getPassword().isBlank()) {
-			user.setPassword(passwordEncoder.encode(request.getPassword()));
-		}
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new RuntimeException("Email already exists");
+            }
 
-		// Update role only if provided
-		if (request.getRole() != null) {
+            user.setEmail(request.getEmail());
+        }
 
-			Role role = roleRepository.findByName(request.getRole())
-					.orElseThrow(() -> new RuntimeException("Role not found"));
+        // Update phone
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
 
-			user.setRole(role);
-		}
+        // Update password only if provided
+        if (request.getPassword() != null &&
+                !request.getPassword().isBlank()) {
+
+            user.setPassword(
+                    passwordEncoder.encode(request.getPassword())
+            );
+        }
+
+        // Update role
+        if (request.getRole() != null) {
+
+            Role role = roleRepository.findByName(request.getRole())
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Role not found"));
+
+            user.setRole(role);
+        }
+
+        // Update active status
         if (request.getActive() != null) {
             user.setActive(request.getActive());
         }
-		return userRepository.save(user);
-	}
 
-	public void deleteUser(Long id) {
+        return userRepository.save(user);
+    }
 
-		User user = userRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    public void deleteUser(Long id) {
 
-		userRepository.delete(user);
-	}
+        if (!userRepository.existsById(id)) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        userRepository.deleteById(id);
+    }
 }
