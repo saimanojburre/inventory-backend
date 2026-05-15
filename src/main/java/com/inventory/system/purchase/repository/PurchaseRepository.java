@@ -2,6 +2,7 @@ package com.inventory.system.purchase.repository;
 
 import java.util.List;
 
+import com.inventory.system.purchase.dto.PurchaseResponseDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -33,4 +34,20 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     WHERE p.item.id = :itemId
 """)
     Double getAveragePrice(Long itemId);
+
+    @Query("""
+    SELECT new com.inventory.system.purchase.dto.PurchaseResponseDto(
+        p.id,
+        i.id,
+        i.name,
+        p.quantity,
+        p.price,
+        p.supplier,
+        p.purchaseDate
+    )
+    FROM Purchase p
+    JOIN p.item i
+    ORDER BY p.purchaseDate DESC
+""")
+    List<PurchaseResponseDto> getAllPurchaseDtos();
 }

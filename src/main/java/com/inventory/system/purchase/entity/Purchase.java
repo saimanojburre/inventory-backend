@@ -12,7 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 @Entity
 @Table(name = "purchases")
 public class Purchase {
@@ -33,15 +33,17 @@ public class Purchase {
 
 	private LocalDateTime purchaseDate;
 
-	@ManyToOne
-	@JoinColumn(name = "created_by")
-	private User createdBy;
-
 	private LocalDateTime createdAt;
 
-	@ManyToOne
-	@JoinColumn(name = "updated_by")
-	private User updatedBy;
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "created_by")
+    private User createdBy;
+
+    @JsonIgnore
+    @ManyToOne
+    @JoinColumn(name = "updated_by")
+    private User updatedBy;
 
 	private LocalDateTime updatedAt;
 

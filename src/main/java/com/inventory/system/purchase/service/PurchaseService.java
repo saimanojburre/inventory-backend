@@ -2,6 +2,7 @@ package com.inventory.system.purchase.service;
 
 import java.util.List;
 
+import com.inventory.system.purchase.dto.PurchaseResponseDto;
 import org.springframework.stereotype.Service;
 
 import com.inventory.system.exception.ResourceNotFoundException;
@@ -51,10 +52,10 @@ public class PurchaseService {
 	}
 
 	// GET ALL PURCHASES
-	public List<Purchase> getAllPurchases() {
+    public List<PurchaseResponseDto> getAllPurchases() {
 
-		return purchaseRepository.findAll();
-	}
+        return purchaseRepository.getAllPurchaseDtos();
+    }
 
 	// GET PURCHASE BY ID
 	public Purchase getPurchase(Long id) {

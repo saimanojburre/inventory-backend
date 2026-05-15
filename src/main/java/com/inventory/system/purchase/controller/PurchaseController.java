@@ -2,6 +2,7 @@ package com.inventory.system.purchase.controller;
 
 import java.util.List;
 
+import com.inventory.system.purchase.dto.PurchaseResponseDto;
 import org.springframework.web.bind.annotation.*;
 
 import com.inventory.system.purchase.entity.Purchase;
@@ -30,10 +31,10 @@ public class PurchaseController {
 	}
 
 	// GET ALL PURCHASES
-	@GetMapping
-	public List<Purchase> getPurchases() {
-		return purchaseService.getAllPurchases();
-	}
+    @GetMapping
+    public List<PurchaseResponseDto> getPurchases() {
+        return purchaseService.getAllPurchases();
+    }
 
 	// GET PURCHASE BY ID
 	@GetMapping("/{id}")
