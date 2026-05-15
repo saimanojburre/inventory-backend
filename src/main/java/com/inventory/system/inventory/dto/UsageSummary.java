@@ -1,11 +1,16 @@
 package com.inventory.system.inventory.dto;
 
+import java.math.BigDecimal;
+
 public class UsageSummary {
 
     private Long itemId;
-    private Double totalUsed;
+    private BigDecimal totalUsed;
 
-    public UsageSummary(Long itemId, Double totalUsed) {
+    public UsageSummary(
+            Long itemId,
+            BigDecimal totalUsed
+    ) {
         this.itemId = itemId;
         this.totalUsed = totalUsed;
     }
@@ -14,7 +19,7 @@ public class UsageSummary {
         return itemId;
     }
 
-    public Double getTotalUsed() {
+    public BigDecimal getTotalUsed() {
         return totalUsed;
     }
 }

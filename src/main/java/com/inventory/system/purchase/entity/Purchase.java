@@ -1,33 +1,34 @@
 package com.inventory.system.purchase.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.inventory.system.item.entity.Item;
 import com.inventory.system.user.entity.User;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 @Entity
-@Table(name = "purchases")
+@Table(
+        name = "purchases",
+        indexes = {
+                @Index(name = "idx_purchase_item", columnList = "item_id"),
+                @Index(name = "idx_purchase_date", columnList = "purchaseDate")
+        }
+)
 public class Purchase {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "item_id")
 	private Item item;
 
-	private Double quantity;
+	private BigDecimal quantity;
 
-	private Double price;
+	private BigDecimal price;
 
 	private String supplier;
 
@@ -36,16 +37,30 @@ public class Purchase {
 	private LocalDateTime createdAt;
 
     @JsonIgnore
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
 
     @JsonIgnore
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "updated_by")
     private User updatedBy;
 
 	private LocalDateTime updatedAt;
+    @PrePersist
+    public void onCreate() {
+
+        this.createdAt = LocalDateTime.now();
+
+        if (this.purchaseDate == null) {
+            this.purchaseDate = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
 
 	public Long getId() {
 		return id;
@@ -63,19 +78,19 @@ public class Purchase {
 		this.item = item;
 	}
 
-	public Double getQuantity() {
+	public BigDecimal getQuantity() {
 		return quantity;
 	}
 
-	public void setQuantity(Double quantity) {
+	public void setQuantity(BigDecimal quantity) {
 		this.quantity = quantity;
 	}
 
-	public Double getPrice() {
+	public BigDecimal getPrice() {
 		return price;
 	}
 
-	public void setPrice(Double price) {
+	public void setPrice(BigDecimal price) {
 		this.price = price;
 	}
 

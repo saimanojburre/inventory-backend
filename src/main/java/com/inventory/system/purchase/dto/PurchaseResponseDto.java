@@ -1,5 +1,6 @@
 package com.inventory.system.purchase.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public class PurchaseResponseDto {
@@ -7,8 +8,8 @@ public class PurchaseResponseDto {
     private Long id;
     private Long itemId;
     private String itemName;
-    private Double quantity;
-    private Double price;
+    private BigDecimal quantity;
+    private BigDecimal price;
     private String supplier;
     private LocalDateTime purchaseDate;
 
@@ -16,8 +17,8 @@ public class PurchaseResponseDto {
             Long id,
             Long itemId,
             String itemName,
-            Double quantity,
-            Double price,
+            BigDecimal quantity,
+            BigDecimal price,
             String supplier,
             LocalDateTime purchaseDate
     ) {
@@ -42,11 +43,11 @@ public class PurchaseResponseDto {
         return itemName;
     }
 
-    public Double getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
     }
 
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 

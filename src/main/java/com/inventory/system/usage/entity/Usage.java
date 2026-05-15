@@ -1,5 +1,6 @@
 package com.inventory.system.usage.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.inventory.system.item.entity.Item;
@@ -8,18 +9,25 @@ import com.inventory.system.user.entity.User;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "usage_records")
+@Table(
+        name = "usage_records",
+        indexes = {
+                @Index(name = "idx_usage_item", columnList = "item_id"),
+                @Index(name = "idx_usage_date", columnList = "usedDateTime"),
+                @Index(name = "idx_usage_department", columnList = "department")
+        }
+)
 public class Usage {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "item_id")
 	private Item item;
 
-	private Double quantity;
+	private BigDecimal quantity;
 
 	private String department;
 
@@ -30,18 +38,18 @@ public class Usage {
 	private String givenBy;
 
 	@Column(name = "cost_per_unit")
-	private Double costPerUnit;
+	private BigDecimal costPerUnit;
 
 	@Column(name = "total_cost")
-	private Double totalCost;
+	private BigDecimal totalCost;
 
-	@ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "created_by")
 	private User createdBy;
 
 	private LocalDateTime createdAt;
 
-	@ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "updated_by")
 	private User updatedBy;
 
@@ -63,11 +71,11 @@ public class Usage {
 		this.item = item;
 	}
 
-	public Double getQuantity() {
+	public BigDecimal getQuantity() {
 		return quantity;
 	}
 
-	public void setQuantity(Double quantity) {
+	public void setQuantity(BigDecimal quantity) {
 		this.quantity = quantity;
 	}
 
@@ -135,19 +143,19 @@ public class Usage {
 		this.updatedAt = updatedAt;
 	}
 
-	public Double getCostPerUnit() {
+	public BigDecimal getCostPerUnit() {
 		return costPerUnit;
 	}
 
-	public void setCostPerUnit(Double costPerUnit) {
+	public void setCostPerUnit(BigDecimal costPerUnit) {
 		this.costPerUnit = costPerUnit;
 	}
 
-	public Double getTotalCost() {
+	public BigDecimal getTotalCost() {
 		return totalCost;
 	}
 
-	public void setTotalCost(Double totalCost) {
+	public void setTotalCost(BigDecimal totalCost) {
 		this.totalCost = totalCost;
 	}
 

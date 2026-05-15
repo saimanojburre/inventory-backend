@@ -1,12 +1,18 @@
 package com.inventory.system.inventory.dto;
 
+import java.math.BigDecimal;
+
 public class PurchaseSummary {
 
     private Long itemId;
-    private Double totalPurchased;
-    private Double avgPrice;
+    private BigDecimal totalPurchased;
+    private BigDecimal avgPrice;
 
-    public PurchaseSummary(Long itemId, Double totalPurchased, Double avgPrice) {
+    public PurchaseSummary(
+            Long itemId,
+            BigDecimal totalPurchased,
+            BigDecimal avgPrice
+    ) {
         this.itemId = itemId;
         this.totalPurchased = totalPurchased;
         this.avgPrice = avgPrice;
@@ -16,11 +22,11 @@ public class PurchaseSummary {
         return itemId;
     }
 
-    public Double getTotalPurchased() {
+    public BigDecimal getTotalPurchased() {
         return totalPurchased;
     }
 
-    public Double getAvgPrice() {
+    public BigDecimal getAvgPrice() {
         return avgPrice;
     }
 }

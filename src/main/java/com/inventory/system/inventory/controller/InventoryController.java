@@ -2,6 +2,7 @@ package com.inventory.system.inventory.controller;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.inventory.system.inventory.dto.InventoryResponse;
@@ -11,15 +12,20 @@ import com.inventory.system.inventory.service.InventoryService;
 @RequestMapping("/inventory")
 public class InventoryController {
 
-	private final InventoryService inventoryService;
+    private final InventoryService inventoryService;
 
-	public InventoryController(InventoryService inventoryService) {
-		this.inventoryService = inventoryService;
-	}
+    public InventoryController(
+            InventoryService inventoryService
+    ) {
+        this.inventoryService = inventoryService;
+    }
 
-	@GetMapping
-	public List<InventoryResponse> getInventory() {
+    @GetMapping
+    public ResponseEntity<List<InventoryResponse>>
+    getInventory() {
 
-		return inventoryService.getInventory();
-	}
+        return ResponseEntity.ok(
+                inventoryService.getInventory()
+        );
+    }
 }

@@ -1,5 +1,6 @@
 package com.inventory.system.usage.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.inventory.system.exception.BadRequestException;
 import com.inventory.system.exception.ResourceNotFoundException;
@@ -19,219 +21,387 @@ import com.inventory.system.usage.entity.Usage;
 import com.inventory.system.usage.repository.UsageRepository;
 
 @Service
+@Transactional
 public class UsageService {
 
-	private final UsageRepository usageRepository;
-	private final ItemRepository itemRepository;
-	private final PurchaseRepository purchaseRepository;
-	private final InventoryService inventoryService;
+    private final UsageRepository usageRepository;
+    private final ItemRepository itemRepository;
+    private final PurchaseRepository purchaseRepository;
+    private final InventoryService inventoryService;
 
-	public UsageService(UsageRepository usageRepository, ItemRepository itemRepository,
-			PurchaseRepository purchaseRepository, InventoryService inventoryService) {
+    public UsageService(
+            UsageRepository usageRepository,
+            ItemRepository itemRepository,
+            PurchaseRepository purchaseRepository,
+            InventoryService inventoryService
+    ) {
+        this.usageRepository = usageRepository;
+        this.itemRepository = itemRepository;
+        this.purchaseRepository = purchaseRepository;
+        this.inventoryService = inventoryService;
+    }
 
-		this.usageRepository = usageRepository;
-		this.itemRepository = itemRepository;
-		this.purchaseRepository = purchaseRepository;
-		this.inventoryService = inventoryService;
-	}
+    // ================= CREATE USAGE =================
+
+    public Usage createUsage(Usage usage) {
 
-	// ================= CREATE USAGE =================
+        Item item = validateAndGetItem(
+                usage.getItem().getId()
+        );
 
-	public Usage createUsage(Usage usage) {
+        validateStock(
+                item.getId(),
+                usage.getQuantity()
+        );
+
+        applyCosting(
+                usage,
+                item.getId()
+        );
+
+        usage.setItem(item);
 
-		Long itemId = usage.getItem().getId();
+        return usageRepository.save(usage);
+    }
 
-		Item item = itemRepository.findById(itemId).orElseThrow(() -> new ResourceNotFoundException("Item not found"));
+    // ================= BULK SAVE =================
 
-		Double purchased = purchaseRepository.getTotalPurchased(itemId);
-		Double used = usageRepository.getTotalUsed(itemId);
+    public List<Usage> createUsages(List<Usage> usages) {
 
-		if (purchased == null)
-			purchased = 0.0;
-		if (used == null)
-			used = 0.0;
+        for (Usage usage : usages) {
 
-		Double currentStock = purchased - used;
+            Long itemId =
+                    usage.getItem().getId();
 
-		if (usage.getQuantity() > currentStock) {
-			throw new BadRequestException("Not enough stock. Available stock: " + currentStock);
-		}
+            Item item =
+                    validateAndGetItem(itemId);
 
-		// 🔥 GET AVG COST FROM INVENTORY
-		Double avgCost = inventoryService.getAverageCost(itemId);
+            validateStock(
+                    itemId,
+                    usage.getQuantity()
+            );
 
-		if (avgCost == null)
-			avgCost = 0.0;
+            applyCosting(
+                    usage,
+                    itemId
+            );
 
-		// 🔥 STORE COST (IMPORTANT)
-		usage.setCostPerUnit(avgCost);
-		usage.setTotalCost(avgCost * usage.getQuantity());
+            usage.setItem(item);
+        }
 
-		usage.setItem(item);
+        return usageRepository.saveAll(usages);
+    }
 
-		return usageRepository.save(usage);
-	}
+    // ================= GET =================
 
-	// ================= BULK SAVE =================
+    @Transactional(readOnly = true)
+    public List<Usage> getAllUsage() {
 
-	public List<Usage> createUsages(List<Usage> usages) {
+        return usageRepository.findAll();
+    }
 
-		for (Usage usage : usages) {
+    @Transactional(readOnly = true)
+    public Usage getUsage(Long id) {
 
-			Long itemId = usage.getItem().getId();
+        return usageRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Usage not found"
+                        )
+                );
+    }
 
-			Double purchased = purchaseRepository.getTotalPurchased(itemId);
-			Double used = usageRepository.getTotalUsed(itemId);
+    // ================= UPDATE =================
 
-			if (purchased == null)
-				purchased = 0.0;
-			if (used == null)
-				used = 0.0;
+    public Usage updateUsage(
+            Long id,
+            Usage usage
+    ) {
 
-			Double currentStock = purchased - used;
+        Usage existing =
+                usageRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Usage not found"
+                                )
+                        );
 
-			if (usage.getQuantity() > currentStock) {
-				throw new BadRequestException("Not enough stock for item id: " + itemId);
-			}
+        validateStock(
+                existing.getItem().getId(),
+                usage.getQuantity()
+        );
 
-			// 🔥 APPLY COST FOR EACH
-			Double avgCost = inventoryService.getAverageCost(itemId);
+        existing.setQuantity(
+                usage.getQuantity()
+        );
 
-			if (avgCost == null)
-				avgCost = 0.0;
+        existing.setDepartment(
+                usage.getDepartment()
+        );
 
-			usage.setCostPerUnit(avgCost);
-			usage.setTotalCost(avgCost * usage.getQuantity());
-		}
+        existing.setTakenBy(
+                usage.getTakenBy()
+        );
 
-		return usageRepository.saveAll(usages);
-	}
+        existing.setGivenBy(
+                usage.getGivenBy()
+        );
 
-	// ================= GET =================
+        existing.setUsedDateTime(
+                usage.getUsedDateTime()
+        );
 
-	public List<Usage> getAllUsage() {
-		return usageRepository.findAll();
-	}
+        applyCosting(
+                existing,
+                existing.getItem().getId()
+        );
 
-	public Usage getUsage(Long id) {
-		return usageRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Usage not found"));
-	}
+        return usageRepository.save(existing);
+    }
 
-	// ================= UPDATE =================
+    // ================= DELETE =================
 
-	public Usage updateUsage(Long id, Usage usage) {
+    public void deleteUsage(Long id) {
 
-		Usage existing = usageRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Usage not found"));
+        if (!usageRepository.existsById(id)) {
 
-		existing.setQuantity(usage.getQuantity());
-		existing.setDepartment(usage.getDepartment());
-		existing.setTakenBy(usage.getTakenBy());
-		existing.setGivenBy(usage.getGivenBy());
-		existing.setUsedDateTime(usage.getUsedDateTime());
+            throw new ResourceNotFoundException(
+                    "Usage not found"
+            );
+        }
 
-		// 🔥 Recalculate cost on update
-		Double avgCost = inventoryService.getAverageCost(existing.getItem().getId());
+        usageRepository.deleteById(id);
+    }
 
-		if (avgCost == null)
-			avgCost = 0.0;
+    // ================= REPORT =================
 
-		existing.setCostPerUnit(avgCost);
-		existing.setTotalCost(avgCost * existing.getQuantity());
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getUsageReport(
+            String fromDate,
+            String toDate
+    ) {
+
+        List<Usage> usages;
+
+        if (fromDate != null && toDate != null) {
+
+            LocalDateTime from =
+                    LocalDate.parse(fromDate)
+                            .atStartOfDay();
 
-		return usageRepository.save(existing);
-	}
+            LocalDateTime to =
+                    LocalDate.parse(toDate)
+                            .atTime(23, 59, 59);
 
-	// ================= DELETE =================
+            usages = usageRepository
+                    .findByUsedDateTimeBetween(
+                            from,
+                            to
+                    );
 
-	public void deleteUsage(Long id) {
+        } else {
 
-		Usage usage = usageRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Usage not found"));
+            usages = usageRepository.findAll();
+        }
+
+        List<String> categories = List.of(
+                "Raw Materials",
+                "Packing Materials",
+                "Chicken",
+                "Mutton",
+                "Fish & Prawns",
+                "Butter, Cheese, Cream",
+                "Cool Drinks & Water Bottles",
+                "Sanitary"
+        );
+
+        Map<String, Map<String, Object>> result =
+                new LinkedHashMap<>();
+
+        for (Usage usage : usages) {
+
+            String department =
+                    usage.getDepartment();
+
+            String category =
+                    usage.getItem().getCategory();
+
+            BigDecimal cost =
+                    calculateCost(usage);
 
-		usageRepository.delete(usage);
-	}
+            result.putIfAbsent(
+                    department,
+                    createEmptyRow(
+                            department,
+                            categories
+                    )
+            );
 
-	// ================= REPORT =================
+            Map<String, Object> row =
+                    result.get(department);
+
+            row.put(
+                    category,
+                    ((BigDecimal) row.get(category))
+                            .add(cost)
+            );
+
+            row.put(
+                    "total",
+                    ((BigDecimal) row.get("total"))
+                            .add(cost)
+            );
+        }
 
-	public List<Map<String, Object>> getUsageReport(String fromDate, String toDate) {
+        // ================= TOTAL ROW =================
+
+        Map<String, Object> totalRow =
+                createEmptyRow(
+                        "Total",
+                        categories
+                );
+
+        for (Map<String, Object> row : result.values()) {
+
+            for (String category : categories) {
+
+                totalRow.put(
+                        category,
+                        ((BigDecimal) totalRow.get(category))
+                                .add(
+                                        (BigDecimal) row.get(category)
+                                )
+                );
+            }
 
-		List<Usage> usages;
+            totalRow.put(
+                    "total",
+                    ((BigDecimal) totalRow.get("total"))
+                            .add(
+                                    (BigDecimal) row.get("total")
+                            )
+            );
+        }
 
-		if (fromDate != null && toDate != null) {
-			LocalDateTime from = LocalDate.parse(fromDate).atStartOfDay();
-			LocalDateTime to = LocalDate.parse(toDate).atTime(23, 59, 59);
+        List<Map<String, Object>> finalResult =
+                new ArrayList<>(result.values());
 
-			usages = usageRepository.findByUsedDateTimeBetween(from, to);
-		} else {
-			usages = usageRepository.findAll();
-		}
+        finalResult.add(totalRow);
 
-		List<String> categories = List.of("Raw Materials", "Packing Materials", "Chicken", "Mutton", "Fish & Prawns",
-				"Butter, Cheese, Cream", "Cool Drinks & Water Bottles", "Sanitary");
+        return finalResult;
+    }
 
-		Map<String, Map<String, Object>> result = new LinkedHashMap<>();
+    // ================= PRIVATE METHODS =================
 
-		for (Usage u : usages) {
+    private Item validateAndGetItem(
+            Long itemId
+    ) {
 
-			String dept = u.getDepartment();
-			String category = u.getItem().getCategory();
+        return itemRepository.findById(itemId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Item not found"
+                        )
+                );
+    }
 
-			// ✅ USE STORED COST
-			double cost = calculateCost(u);
+    private void validateStock(
+            Long itemId,
+            BigDecimal requestedQuantity
+    ) {
 
-			result.putIfAbsent(dept, createEmptyRow(dept, categories));
+        BigDecimal purchased =
+                purchaseRepository.getTotalPurchased(itemId);
 
-			Map<String, Object> row = result.get(dept);
+        BigDecimal used =
+                usageRepository.getTotalUsed(itemId);
 
-			row.put(category, (double) row.get(category) + cost);
-			row.put("total", (double) row.get("total") + cost);
-		}
+        purchased = purchased != null
+                ? purchased
+                : BigDecimal.ZERO;
 
-		// TOTAL ROW
-		Map<String, Object> totalRow = createEmptyRow("Total", categories);
+        used = used != null
+                ? used
+                : BigDecimal.ZERO;
 
-		for (Map<String, Object> row : result.values()) {
+        BigDecimal currentStock =
+                purchased.subtract(used);
 
-			for (String cat : categories) {
-				totalRow.put(cat, (double) totalRow.get(cat) + (double) row.get(cat));
-			}
+        if (requestedQuantity.compareTo(currentStock) > 0) {
 
-			totalRow.put("total", (double) totalRow.get("total") + (double) row.get("total"));
-		}
+            throw new BadRequestException(
+                    "Not enough stock. Available stock: "
+                            + currentStock
+            );
+        }
+    }
 
-		List<Map<String, Object>> finalResult = new ArrayList<>(result.values());
-		finalResult.add(totalRow);
+    private void applyCosting(
+            Usage usage,
+            Long itemId
+    ) {
 
-		return finalResult;
-	}
+        BigDecimal avgCost =
+                inventoryService.getAverageCost(itemId);
 
-	private Map<String, Object> createEmptyRow(String dept, List<String> categories) {
+        avgCost = avgCost != null
+                ? avgCost
+                : BigDecimal.ZERO;
 
-		Map<String, Object> row = new LinkedHashMap<>();
-		row.put("department", dept);
-		row.put("total", 0.0);
+        usage.setCostPerUnit(avgCost);
 
-		for (String c : categories) {
-			row.put(c, 0.0);
-		}
+        usage.setTotalCost(
+                avgCost.multiply(
+                        usage.getQuantity()
+                )
+        );
+    }
 
-		return row;
-	}
+    private Map<String, Object> createEmptyRow(
+            String department,
+            List<String> categories
+    ) {
 
-	private double calculateCost(Usage u) {
+        Map<String, Object> row =
+                new LinkedHashMap<>();
 
-		// ✅ if cost exists → use it
-		if (u.getTotalCost() != null) {
-			return u.getTotalCost();
-		}
+        row.put("department", department);
 
-		// 🔥 fallback (temporary fix)
-		Double avgCost = inventoryService.getAverageCost(u.getItem().getId());
+        row.put("total", BigDecimal.ZERO);
 
-		if (avgCost != null && u.getQuantity() != null) {
-			return avgCost * u.getQuantity();
-		}
+        for (String category : categories) {
 
-		return 0.0;
-	}
+            row.put(
+                    category,
+                    BigDecimal.ZERO
+            );
+        }
+
+        return row;
+    }
+
+    private BigDecimal calculateCost(
+            Usage usage
+    ) {
+
+        if (usage.getTotalCost() != null) {
+
+            return usage.getTotalCost();
+        }
+
+        BigDecimal avgCost =
+                inventoryService.getAverageCost(
+                        usage.getItem().getId()
+                );
+
+        if (avgCost != null &&
+                usage.getQuantity() != null) {
+
+            return avgCost.multiply(
+                    usage.getQuantity()
+            );
+        }
+
+        return BigDecimal.ZERO;
+    }
 }

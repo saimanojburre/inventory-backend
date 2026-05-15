@@ -3,6 +3,7 @@ package com.inventory.system.usage.controller;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,51 +14,87 @@ import com.inventory.system.usage.service.UsageService;
 @RequestMapping("/usage")
 public class UsageController {
 
-	private final UsageService usageService;
+    private final UsageService usageService;
 
-	public UsageController(UsageService usageService) {
-		this.usageService = usageService;
-	}
+    public UsageController(UsageService usageService) {
+        this.usageService = usageService;
+    }
 
-	@PostMapping
-	public Usage createUsage(@RequestBody Usage usage) {
-		return usageService.createUsage(usage);
-	}
+    @PostMapping
+    public ResponseEntity<Usage> createUsage(
+            @RequestBody Usage usage
+    ) {
 
-	@PostMapping("/bulk")
-	public List<Usage> createUsages(@RequestBody List<Usage> usages) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(usageService.createUsage(usage));
+    }
 
-		return usageService.createUsages(usages);
-	}
+    @PostMapping("/bulk")
+    public ResponseEntity<List<Usage>> createUsages(
+            @RequestBody List<Usage> usages
+    ) {
 
-	@GetMapping
-	public List<Usage> getUsage() {
-		return usageService.getAllUsage();
-	}
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(usageService.createUsages(usages));
+    }
 
-	@GetMapping("/{id}")
-	public Usage getUsage(@PathVariable Long id) {
-		return usageService.getUsage(id);
-	}
+    @GetMapping
+    public ResponseEntity<List<Usage>> getUsage() {
 
-	@PutMapping("/{id}")
-	public Usage updateUsage(@PathVariable Long id, @RequestBody Usage usage) {
+        return ResponseEntity.ok(
+                usageService.getAllUsage()
+        );
+    }
 
-		return usageService.updateUsage(id, usage);
-	}
+    @GetMapping("/{id}")
+    public ResponseEntity<Usage> getUsage(
+            @PathVariable Long id
+    ) {
 
-	@DeleteMapping("/{id}")
-	public String deleteUsage(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                usageService.getUsage(id)
+        );
+    }
 
-		usageService.deleteUsage(id);
+    @PutMapping("/{id}")
+    public ResponseEntity<Usage> updateUsage(
+            @PathVariable Long id,
+            @RequestBody Usage usage
+    ) {
 
-		return "Usage deleted";
-	}
+        return ResponseEntity.ok(
+                usageService.updateUsage(id, usage)
+        );
+    }
 
-	@GetMapping("/report")
-	public ResponseEntity<List<Map<String, Object>>> getUsageReport(@RequestParam(required = false) String fromDate,
-			@RequestParam(required = false) String toDate) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Map<String, String>> deleteUsage(
+            @PathVariable Long id
+    ) {
 
-		return ResponseEntity.ok(usageService.getUsageReport(fromDate, toDate));
-	}
+        usageService.deleteUsage(id);
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message",
+                        "Usage deleted successfully"
+                )
+        );
+    }
+
+    @GetMapping("/report")
+    public ResponseEntity<List<Map<String, Object>>> getUsageReport(
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate
+    ) {
+
+        return ResponseEntity.ok(
+                usageService.getUsageReport(
+                        fromDate,
+                        toDate
+                )
+        );
+    }
 }
