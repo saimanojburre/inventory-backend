@@ -5,13 +5,15 @@ import java.math.BigDecimal;
 public class PurchaseSummary {
 
     private Long itemId;
+
     private BigDecimal totalPurchased;
-    private BigDecimal avgPrice;
+
+    private Double avgPrice;
 
     public PurchaseSummary(
             Long itemId,
             BigDecimal totalPurchased,
-            BigDecimal avgPrice
+            Double avgPrice
     ) {
         this.itemId = itemId;
         this.totalPurchased = totalPurchased;
@@ -26,7 +28,7 @@ public class PurchaseSummary {
         return totalPurchased;
     }
 
-    public BigDecimal getAvgPrice() {
+    public Double getAvgPrice() {
         return avgPrice;
     }
 }

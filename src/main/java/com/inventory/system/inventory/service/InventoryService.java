@@ -6,24 +6,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.inventory.system.inventory.dto.InventoryResponse;
 import com.inventory.system.inventory.dto.PurchaseSummary;
 import com.inventory.system.inventory.dto.UsageSummary;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.inventory.system.inventory.dto.InventoryResponse;
 import com.inventory.system.item.entity.Item;
 import com.inventory.system.item.repository.ItemRepository;
 import com.inventory.system.purchase.repository.PurchaseRepository;
 import com.inventory.system.usage.repository.UsageRepository;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional(readOnly = true)
 public class InventoryService {
 
     private final ItemRepository itemRepository;
+
     private final PurchaseRepository purchaseRepository;
+
     private final UsageRepository usageRepository;
 
     public InventoryService(
@@ -31,6 +32,7 @@ public class InventoryService {
             PurchaseRepository purchaseRepository,
             UsageRepository usageRepository
     ) {
+
         this.itemRepository = itemRepository;
         this.purchaseRepository = purchaseRepository;
         this.usageRepository = usageRepository;
@@ -78,7 +80,9 @@ public class InventoryService {
         return response;
     }
 
-    public BigDecimal getAverageCost(Long itemId) {
+    public BigDecimal getAverageCost(
+            Long itemId
+    ) {
 
         BigDecimal avgPrice =
                 purchaseRepository.getAveragePrice(itemId);
@@ -103,7 +107,9 @@ public class InventoryService {
 
         BigDecimal avgPrice =
                 purchase != null
-                        ? purchase.getAvgPrice()
+                        ? BigDecimal.valueOf(
+                        purchase.getAvgPrice()
+                )
                         : BigDecimal.ZERO;
 
         BigDecimal used =
@@ -121,13 +127,27 @@ public class InventoryService {
                 new InventoryResponse();
 
         response.setItemId(item.getId());
-        response.setCategory(item.getCategory());
-        response.setItemName(item.getName());
-        response.setMinStock(item.getMinStock());
-        response.setUnits(item.getUnit());
+
+        response.setCategory(
+                item.getCategory()
+        );
+
+        response.setItemName(
+                item.getName()
+        );
+
+        response.setMinStock(
+                item.getMinStock()
+        );
+
+        response.setUnits(
+                item.getUnit()
+        );
 
         response.setQuantity(quantity);
+
         response.setCost(avgPrice);
+
         response.setTotal(totalValue);
 
         return response;
