@@ -23,7 +23,7 @@ public class Usage {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "item_id")
 	private Item item;
 
@@ -43,13 +43,13 @@ public class Usage {
 	@Column(name = "total_cost")
 	private BigDecimal totalCost;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "created_by")
 	private User createdBy;
 
 	private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "updated_by")
 	private User updatedBy;
 
