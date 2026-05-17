@@ -193,17 +193,7 @@ public class ItemService {
     @Transactional(readOnly = true)
     public List<Item> getAllItems() {
 
-        String username =
-                getLoggedInUsername();
-
-        User user =
-                userRepository.findByUsername(username)
-                        .orElseThrow(() ->
-
-                                new ResourceNotFoundException(
-                                        "User not found"
-                                )
-                        );
+        User user = getCurrentUser();
 
         if ("USER".equals(
                 user.getRole().getName()
