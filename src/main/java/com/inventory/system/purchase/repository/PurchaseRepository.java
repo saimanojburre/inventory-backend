@@ -36,10 +36,13 @@ public interface PurchaseRepository
     );
 
     @Query("""
-        SELECT COALESCE(AVG(p.price), 0)
-        FROM Purchase p
-        WHERE p.item.id = :itemId
-    """)
+    SELECT COALESCE(
+        SUM(p.quantity * p.price) / NULLIF(SUM(p.quantity), 0),
+        0
+    )
+    FROM Purchase p
+    WHERE p.item.id = :itemId
+""")
     BigDecimal getAveragePrice(
             @Param("itemId") Long itemId
     );
