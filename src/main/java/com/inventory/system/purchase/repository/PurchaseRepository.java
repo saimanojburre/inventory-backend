@@ -16,14 +16,17 @@ public interface PurchaseRepository
         extends JpaRepository<Purchase, Long> {
 
     @Query("""
-        SELECT new com.inventory.system.inventory.dto.PurchaseSummary(
-            p.item.id,
-            COALESCE(SUM(p.quantity), 0),
-            COALESCE(AVG(p.price), 0)
-        )
-        FROM Purchase p
-        GROUP BY p.item.id
-    """)
+    SELECT new com.inventory.system.inventory.dto.PurchaseSummary(
+        p.item.id,
+        SUM(p.quantity),
+        CASE
+            WHEN SUM(p.quantity) = 0 THEN 0
+            ELSE SUM(p.quantity * p.price) / SUM(p.quantity)
+        END
+    )
+    FROM Purchase p
+    GROUP BY p.item.id
+""")
     List<PurchaseSummary> getPurchaseSummary();
 
     @Query("""

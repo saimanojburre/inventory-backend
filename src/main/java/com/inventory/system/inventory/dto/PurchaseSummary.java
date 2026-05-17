@@ -8,12 +8,12 @@ public class PurchaseSummary {
 
     private BigDecimal totalPurchased;
 
-    private Double avgPrice;
+    private BigDecimal avgPrice;
 
     public PurchaseSummary(
             Long itemId,
             BigDecimal totalPurchased,
-            Double avgPrice
+            BigDecimal avgPrice
     ) {
         this.itemId = itemId;
         this.totalPurchased = totalPurchased;
@@ -28,7 +28,7 @@ public class PurchaseSummary {
         return totalPurchased;
     }
 
-    public Double getAvgPrice() {
+    public BigDecimal getAvgPrice() {
         return avgPrice;
     }
 }

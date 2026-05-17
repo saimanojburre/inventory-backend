@@ -107,9 +107,7 @@ public class InventoryService {
 
         BigDecimal avgPrice =
                 purchase != null
-                        ? BigDecimal.valueOf(
-                        purchase.getAvgPrice()
-                )
+                        ? purchase.getAvgPrice()
                         : BigDecimal.ZERO;
 
         BigDecimal used =
