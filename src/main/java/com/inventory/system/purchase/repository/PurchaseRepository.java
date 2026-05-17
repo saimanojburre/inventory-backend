@@ -36,10 +36,11 @@ public interface PurchaseRepository
     );
 
     @Query("""
-    SELECT COALESCE(
-        SUM(p.quantity * p.price) / NULLIF(SUM(p.quantity), 0),
-        0
-    )
+    SELECT
+        CASE
+            WHEN SUM(p.quantity) = 0 THEN 0
+            ELSE SUM(p.quantity * p.price) / SUM(p.quantity)
+        END
     FROM Purchase p
     WHERE p.item.id = :itemId
 """)
