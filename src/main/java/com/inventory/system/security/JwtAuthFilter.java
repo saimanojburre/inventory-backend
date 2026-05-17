@@ -1,5 +1,7 @@
 package com.inventory.system.security;
 
+import java.io.IOException;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,20 +13,30 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.Collections;
+import com.inventory.system.user.entity.User;
+import com.inventory.system.user.repository.UserRepository;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
 
-    public JwtAuthFilter(JwtService jwtService) {
+    private final UserRepository userRepository;
+
+    public JwtAuthFilter(
+            JwtService jwtService,
+            UserRepository userRepository
+    ) {
+
         this.jwtService = jwtService;
+
+        this.userRepository = userRepository;
     }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
+    protected boolean shouldNotFilter(
+            HttpServletRequest request
+    ) {
 
         String path = request.getServletPath();
 
@@ -36,45 +48,74 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(
+
             HttpServletRequest request,
+
             HttpServletResponse response,
-            FilterChain filterChain)
-            throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+            FilterChain filterChain
 
-        // No token present
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    ) throws ServletException, IOException {
+
+        String authHeader =
+                request.getHeader("Authorization");
+
+        // =====================================================
+        // NO TOKEN
+        // =====================================================
+
+        if (authHeader == null ||
+                !authHeader.startsWith("Bearer ")) {
 
             filterChain.doFilter(request, response);
+
             return;
         }
 
         try {
 
-            String token = authHeader.substring(7);
+            String token =
+                    authHeader.substring(7);
 
-            String email = jwtService.extractEmail(token);
+            String username =
+                    jwtService.extractEmail(token);
 
-            // Avoid resetting authentication
-            if (email != null &&
-                    SecurityContextHolder.getContext()
+            // =====================================================
+            // SET AUTHENTICATION
+            // =====================================================
+
+            if (username != null &&
+                    SecurityContextHolder
+                            .getContext()
                             .getAuthentication() == null) {
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                email,
-                                null,
-                                Collections.emptyList()
-                        );
+                User user =
+                        userRepository
+                                .findByUsername(username)
+                                .orElse(null);
 
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource()
-                                .buildDetails(request)
-                );
+                if (user != null) {
 
-                SecurityContextHolder.getContext()
-                        .setAuthentication(authentication);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+
+                                    user,
+
+                                    null,
+
+                                    null
+                            );
+
+                    authentication.setDetails(
+
+                            new WebAuthenticationDetailsSource()
+                                    .buildDetails(request)
+                    );
+
+                    SecurityContextHolder
+                            .getContext()
+                            .setAuthentication(authentication);
+                }
             }
 
         } catch (Exception ex) {

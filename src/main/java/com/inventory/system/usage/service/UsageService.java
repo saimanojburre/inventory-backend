@@ -8,9 +8,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.inventory.system.activity.enums.ActionType;
+import com.inventory.system.activity.enums.ModuleType;
+import com.inventory.system.activity.service.ActivityLogService;
 import com.inventory.system.exception.BadRequestException;
 import com.inventory.system.exception.ResourceNotFoundException;
 import com.inventory.system.inventory.service.InventoryService;
@@ -19,31 +24,49 @@ import com.inventory.system.item.repository.ItemRepository;
 import com.inventory.system.purchase.repository.PurchaseRepository;
 import com.inventory.system.usage.entity.Usage;
 import com.inventory.system.usage.repository.UsageRepository;
+import com.inventory.system.user.entity.User;
 
 @Service
 @Transactional
 public class UsageService {
 
     private final UsageRepository usageRepository;
+
     private final ItemRepository itemRepository;
+
     private final PurchaseRepository purchaseRepository;
+
     private final InventoryService inventoryService;
+
+    private final ActivityLogService activityLogService;
 
     public UsageService(
             UsageRepository usageRepository,
             ItemRepository itemRepository,
             PurchaseRepository purchaseRepository,
-            InventoryService inventoryService
+            InventoryService inventoryService,
+            ActivityLogService activityLogService
     ) {
+
         this.usageRepository = usageRepository;
+
         this.itemRepository = itemRepository;
+
         this.purchaseRepository = purchaseRepository;
+
         this.inventoryService = inventoryService;
+
+        this.activityLogService = activityLogService;
     }
 
-    // ================= CREATE USAGE =================
+    // =====================================================
+    // CREATE USAGE
+    // =====================================================
 
-    public Usage createUsage(Usage usage) {
+    public Usage createUsage(
+            Usage usage,
+            String sessionId
+    ) {
 
         Item item = validateAndGetItem(
                 usage.getItem().getId()
@@ -61,12 +84,46 @@ public class UsageService {
 
         usage.setItem(item);
 
-        return usageRepository.save(usage);
+        Usage savedUsage =
+                usageRepository.save(usage);
+
+        User currentUser =
+                getCurrentUser();
+
+        activityLogService.log(
+
+                currentUser.getId(),
+
+                currentUser.getUsername(),
+
+                currentUser.getRole().getName(),
+
+                ModuleType.USAGE,
+
+                ActionType.CREATE,
+
+                buildCreateDescription(savedUsage),
+
+                savedUsage.getId(),
+
+                savedUsage.getItem().getName(),
+
+                sessionId,
+
+                "SUCCESS"
+        );
+
+        return savedUsage;
     }
 
-    // ================= BULK SAVE =================
+    // =====================================================
+    // BULK CREATE
+    // =====================================================
 
-    public List<Usage> createUsages(List<Usage> usages) {
+    public List<Usage> createUsages(
+            List<Usage> usages,
+            String sessionId
+    ) {
 
         for (Usage usage : usages) {
 
@@ -89,10 +146,43 @@ public class UsageService {
             usage.setItem(item);
         }
 
-        return usageRepository.saveAll(usages);
+        List<Usage> savedUsages =
+                usageRepository.saveAll(usages);
+
+        User currentUser =
+                getCurrentUser();
+
+        activityLogService.log(
+
+                currentUser.getId(),
+
+                currentUser.getUsername(),
+
+                currentUser.getRole().getName(),
+
+                ModuleType.USAGE,
+
+                ActionType.CREATE,
+
+                "Created bulk usage with "
+                        + savedUsages.size()
+                        + " items",
+
+                null,
+
+                "Bulk Usage",
+
+                sessionId,
+
+                "SUCCESS"
+        );
+
+        return savedUsages;
     }
 
-    // ================= GET =================
+    // =====================================================
+    // GET ALL
+    // =====================================================
 
     @Transactional(readOnly = true)
     public List<Usage> getAllUsage() {
@@ -100,27 +190,41 @@ public class UsageService {
         return usageRepository.findAll();
     }
 
+    // =====================================================
+    // GET BY ID
+    // =====================================================
+
     @Transactional(readOnly = true)
-    public Usage getUsage(Long id) {
+    public Usage getUsage(
+            Long id
+    ) {
 
         return usageRepository.findById(id)
                 .orElseThrow(() ->
+
                         new ResourceNotFoundException(
                                 "Usage not found"
                         )
                 );
     }
 
-    // ================= UPDATE =================
+    // =====================================================
+    // UPDATE
+    // =====================================================
 
     public Usage updateUsage(
+
             Long id,
-            Usage usage
+
+            Usage usage,
+
+            String sessionId
     ) {
 
         Usage existing =
                 usageRepository.findById(id)
                         .orElseThrow(() ->
+
                                 new ResourceNotFoundException(
                                         "Usage not found"
                                 )
@@ -156,24 +260,90 @@ public class UsageService {
                 existing.getItem().getId()
         );
 
-        return usageRepository.save(existing);
+        Usage updatedUsage =
+                usageRepository.save(existing);
+
+        User currentUser =
+                getCurrentUser();
+
+        activityLogService.log(
+
+                currentUser.getId(),
+
+                currentUser.getUsername(),
+
+                currentUser.getRole().getName(),
+
+                ModuleType.USAGE,
+
+                ActionType.UPDATE,
+
+                buildUpdateDescription(updatedUsage),
+
+                updatedUsage.getId(),
+
+                updatedUsage.getItem().getName(),
+
+                sessionId,
+
+                "SUCCESS"
+        );
+
+        return updatedUsage;
     }
 
-    // ================= DELETE =================
+    // =====================================================
+    // DELETE
+    // =====================================================
 
-    public void deleteUsage(Long id) {
+    public void deleteUsage(
 
-        if (!usageRepository.existsById(id)) {
+            Long id,
 
-            throw new ResourceNotFoundException(
-                    "Usage not found"
-            );
-        }
+            String sessionId
+    ) {
+
+        Usage usage =
+                usageRepository.findById(id)
+                        .orElseThrow(() ->
+
+                                new ResourceNotFoundException(
+                                        "Usage not found"
+                                )
+                        );
 
         usageRepository.deleteById(id);
+
+        User currentUser =
+                getCurrentUser();
+
+        activityLogService.log(
+
+                currentUser.getId(),
+
+                currentUser.getUsername(),
+
+                currentUser.getRole().getName(),
+
+                ModuleType.USAGE,
+
+                ActionType.DELETE,
+
+                buildDeleteDescription(usage),
+
+                usage.getId(),
+
+                usage.getItem().getName(),
+
+                sessionId,
+
+                "SUCCESS"
+        );
     }
 
-    // ================= REPORT =================
+    // =====================================================
+    // REPORT
+    // =====================================================
 
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getUsageReport(
@@ -183,7 +353,8 @@ public class UsageService {
 
         List<Usage> usages;
 
-        if (fromDate != null && toDate != null) {
+        if (fromDate != null &&
+                toDate != null) {
 
             LocalDateTime from =
                     LocalDate.parse(fromDate)
@@ -193,8 +364,8 @@ public class UsageService {
                     LocalDate.parse(toDate)
                             .atTime(23, 59, 59);
 
-            usages = usageRepository
-                    .findByUsedDateTimeBetween(
+            usages =
+                    usageRepository.findByUsedDateTimeBetween(
                             from,
                             to
                     );
@@ -204,16 +375,17 @@ public class UsageService {
             usages = usageRepository.findAll();
         }
 
-        List<String> categories = List.of(
-                "Raw Materials",
-                "Packing Materials",
-                "Chicken",
-                "Mutton",
-                "Fish & Prawns",
-                "Butter, Cheese, Cream",
-                "Cool Drinks & Water Bottles",
-                "Sanitary"
-        );
+        List<String> categories =
+                List.of(
+                        "Raw Materials",
+                        "Packing Materials",
+                        "Chicken",
+                        "Mutton",
+                        "Fish & Prawns",
+                        "Butter, Cheese, Cream",
+                        "Cool Drinks & Water Bottles",
+                        "Sanitary"
+                );
 
         Map<String, Map<String, Object>> result =
                 new LinkedHashMap<>();
@@ -253,8 +425,6 @@ public class UsageService {
             );
         }
 
-        // ================= TOTAL ROW =================
-
         Map<String, Object> totalRow =
                 createEmptyRow(
                         "Total",
@@ -291,7 +461,9 @@ public class UsageService {
         return finalResult;
     }
 
-    // ================= PRIVATE METHODS =================
+    // =====================================================
+    // PRIVATE METHODS
+    // =====================================================
 
     private Item validateAndGetItem(
             Long itemId
@@ -299,6 +471,7 @@ public class UsageService {
 
         return itemRepository.findById(itemId)
                 .orElseThrow(() ->
+
                         new ResourceNotFoundException(
                                 "Item not found"
                         )
@@ -403,5 +576,53 @@ public class UsageService {
         }
 
         return BigDecimal.ZERO;
+    }
+
+    // =====================================================
+    // CURRENT USER
+    // =====================================================
+
+    private User getCurrentUser() {
+
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
+
+        return (User) authentication.getPrincipal();
+    }
+
+    // =====================================================
+    // DESCRIPTIONS
+    // =====================================================
+
+    private String buildCreateDescription(
+            Usage usage
+    ) {
+
+        return "Created usage for item "
+                + usage.getItem().getName()
+                + " quantity "
+                + usage.getQuantity();
+    }
+
+    private String buildUpdateDescription(
+            Usage usage
+    ) {
+
+        return "Updated usage for item "
+                + usage.getItem().getName()
+                + " quantity "
+                + usage.getQuantity();
+    }
+
+    private String buildDeleteDescription(
+            Usage usage
+    ) {
+
+        return "Deleted usage for item "
+                + usage.getItem().getName()
+                + " quantity "
+                + usage.getQuantity();
     }
 }
