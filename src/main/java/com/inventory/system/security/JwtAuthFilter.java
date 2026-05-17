@@ -60,9 +60,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String authHeader =
                 request.getHeader("Authorization");
 
-        // =====================================================
         // NO TOKEN
-        // =====================================================
 
         if (authHeader == null ||
                 !authHeader.startsWith("Bearer ")) {
@@ -80,9 +78,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             String username =
                     jwtService.extractEmail(token);
 
-            // =====================================================
             // SET AUTHENTICATION
-            // =====================================================
 
             if (username != null &&
                     SecurityContextHolder
@@ -103,7 +99,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                                     null,
 
-                                    null
+                                   null
                             );
 
                     authentication.setDetails(

@@ -2,6 +2,7 @@ package com.inventory.system.user.controller;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -111,29 +112,18 @@ public class UserController {
         );
     }
 
-    // =====================================================
     // DELETE USER
-    // =====================================================
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(
-
             @PathVariable Long id,
-
-            @RequestHeader(
-                    value = "X-Session-Id",
-                    required = false
-            )
-            String sessionId
+            HttpServletRequest request
     ) {
 
-        userService.deleteUser(
-                id,
-                sessionId
-        );
+        String sessionId = request.getSession().getId();
 
-        return ResponseEntity.ok(
-                "User deleted successfully"
-        );
+        userService.deleteUser(id, sessionId);
+
+        return ResponseEntity.ok("User deleted successfully");
     }
 }
